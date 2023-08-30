@@ -40,7 +40,7 @@ server.listen(3001, () => {
 
 // Connect to MongoDB
 mongoose
-  .connect("mongodb://localhost:27017/BettingSite", {
+  .connect("mongodb://localhost:27017/local", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
