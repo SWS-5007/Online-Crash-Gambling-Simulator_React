@@ -79,6 +79,7 @@ export const HomeComponent = () => {
     socket.on("stop_multiplier_count", function (data) {
       setLiveMultiplier(data);
       setLiveMultiplierSwitch(false);
+      console.log('@@@@@@@@@@@@@ChartStop',)
     });
 
     socket.on("start_betting_phase", function (data) {
@@ -134,8 +135,6 @@ export const HomeComponent = () => {
     const currentLiveBettingDatas = liveBettingTableRef.current;
 
     if (currentLiveBettingDatas && currentLiveBettingDatas.length > 0) {
-      console.log("@@@@@@@@@@@@", currentLiveBettingDatas);
-
       const total_bet_amount = currentLiveBettingDatas.reduce(
         (accumulator, currentValue) => {
           return accumulator + currentValue.bet_amount * 1;
@@ -336,7 +335,6 @@ export const HomeComponent = () => {
       setAutoPayoutMultiplier(text);
     }
   };
-
   return (
     <Box className="home-wrapper">
       <Box className="bet-wrapper">

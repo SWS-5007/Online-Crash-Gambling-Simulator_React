@@ -7,11 +7,14 @@ import { v4 as uuidv4 } from "uuid";
 
 import "chart.js/auto";
 import { Chart, Line } from "react-chartjs-2";
+import { ScriptableContext } from "chart.js";
 import "chartjs-adapter-moment";
 
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Slide } from "react-toastify";
+
+import ProgressBar from "@ramonak/react-progress-bar";
 
 import "./chart.css";
 
@@ -20,6 +23,7 @@ export const ChartComponent = (props) => {
 
   const [chartSwitch, setChartSwitch] = useState(false);
   const [chartData, setChartData] = useState({ datasets: [] });
+  const [closedChartData, setClosedChartData] = useState({ datasets: [] });
   const [chartOptions, setChartOptions] = useState({});
 
   useEffect(() => {
@@ -34,6 +38,41 @@ export const ChartComponent = (props) => {
     };
   }, [chartSwitch]);
 
+  const pluginsConfig = [
+    {
+      afterLayout: (chart) => {
+        let ctx = chart.ctx;
+        ctx.save();
+        let gradient = ctx.createLinearGradient(0, 0, 180, 0);
+        gradient.addColorStop(0, "rgb(37 23 71)");
+        gradient.addColorStop(0.5, "rgb(100 70 161)");
+        gradient.addColorStop(1, "rgb(74 46 130)");
+
+        if (chart.data.datasets[0]) {
+          chart.data.datasets[0].backgroundColor = gradient;
+          ctx.restore();
+        }
+      },
+    },
+  ];
+
+  const closedPluginsConfig = [
+    {
+      afterLayout: (chart) => {
+        let ctx = chart.ctx;
+        ctx.save();
+        let gradient = ctx.createLinearGradient(0, 0, 180, 0);
+        gradient.addColorStop(0, "#979899");
+        gradient.addColorStop(1, "#737171");
+
+        if (chart.data.datasets[0]) {
+          chart.data.datasets[0].backgroundColor = gradient;
+          ctx.restore();
+        }
+      },
+    },
+  ];
+
   // Chart Data
   const sendToChart = () => {
     setChartData({
@@ -42,13 +81,42 @@ export const ChartComponent = (props) => {
       datasets: [
         {
           data: props.multiplierCount.current,
-          backgroundColor: "rgba(75,192,192,0.2)",
-          borderColor: "rgba(75,192,192,1)",
-          color: "rgba(255, 255, 255,1)",
+          fill: true,
+          borderColor: (context) => {
+            const ctx = context.chart.ctx;
+            const gradient = ctx.createLinearGradient(0, 0, 250, 0);
+            gradient.addColorStop(0, "#ffffff");
+            gradient.addColorStop(1, "rgb(115 34 255)");
+            return gradient;
+          },
+          borderWeight: "normal",
+          borderWidth: 5,
+          tension: 0.3,
+          pointBackgroundColor: "transparent",
+          pointBorderColor: "transparent",
+        },
+      ],
+    });
 
-          pointRadius: 0,
-          borderDash: [35, 5],
-          lineTension: 0.1,
+    setClosedChartData({
+      labels: props.timeCount_xaxis.current,
+
+      datasets: [
+        {
+          data: props.multiplierCount.current,
+          fill: true,
+          borderColor: (context) => {
+            const ctx = context.chart.ctx;
+            const gradient = ctx.createLinearGradient(0, 0, 250, 0);
+            gradient.addColorStop(0, "#5d5d5d");
+            gradient.addColorStop(1, "#5d5d5d");
+            return gradient;
+          },
+          borderWeight: "normal",
+          borderWidth: 5,
+          tension: 0.3,
+          pointBackgroundColor: "transparent",
+          pointBorderColor: "transparent",
         },
       ],
     });
@@ -58,13 +126,12 @@ export const ChartComponent = (props) => {
       maintainAspectRatio: false,
       elements: {
         line: {
-          tension: 0.1,
+          tension: 1,
         },
       },
       scales: {
-        yAxes: {
+        y: {
           type: "linear",
-
           title: {
             display: false,
             text: "value",
@@ -72,39 +139,24 @@ export const ChartComponent = (props) => {
           min: 1,
           max: props.liveMultiplier > 2 ? props.liveMultiplier : 2,
           ticks: {
-            color: "rgba(255, 255, 255,1)",
-            maxTicksLimit: 5,
-            callback: function (value, index, values) {
-              if (value % 0.5 == 0) return parseFloat(value).toFixed(2);
+            callback: function (value, index, ticks) {
+              return value % 1 === 0 ? "$" + value : "";
             },
           },
           grid: {
-            display: true,
-            color: "white",
+            display: false,
           },
         },
-        xAxes: {
+        x: {
           type: "linear",
-          title: {
-            display: false,
-            text: "value",
-          },
           max: props.gamePhaseTimeElapsed > 2 ? props.gamePhaseTimeElapsed : 2,
           ticks: {
-            color: "rgba(255, 255, 255,1)",
-
-            maxTicksLimit: 5,
-            callback: function (value, index, values) {
-              if (props.gamePhaseTimeElapsed < 10) {
-                if (value % 1 == 0) return value;
-              } else {
-                if (value % 10 == 0) return value;
-              }
+            callback: function (value, index, ticks) {
+              return value % 2 === 0 ? value : "";
             },
           },
           grid: {
-            display: true,
-            color: "white",
+            display: false,
           },
         },
       },
@@ -137,7 +189,33 @@ export const ChartComponent = (props) => {
         <div className="effects-box">
           <div className="basically-the-graph">
             {chartData ? (
-              <Chart type="line" data={chartData} options={chartOptions} />
+              props.liveMultiplierSwitch === true ? (
+                <Chart
+                  id="chart"
+                  type="line"
+                  data={chartData}
+                  options={chartOptions}
+                  plugins={pluginsConfig}
+                />
+              ) : (
+                ""
+              )
+            ) : (
+              ""
+            )}
+
+            {chartData ? (
+              props.liveMultiplierSwitch === true ? (
+                ""
+              ) : (
+                <Chart
+                  id="chart"
+                  type="line"
+                  data={closedChartData}
+                  options={chartOptions}
+                  plugins={closedPluginsConfig}
+                />
+              )
             ) : (
               ""
             )}
@@ -154,7 +232,13 @@ export const ChartComponent = (props) => {
           >
             {(() => {
               if (props.bBettingPhase) {
-                return <span>{props.bettingPhaseTime}</span>;
+                return (
+                  <div>
+                    <span style={{ fontSize: "20px" }}>
+                      Starts in {props.bettingPhaseTime} s
+                    </span>
+                  </div>
+                );
               } else {
                 return (
                   <span
